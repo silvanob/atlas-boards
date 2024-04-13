@@ -10,14 +10,14 @@ import (
 	"flag"
 	"log"
 	"net"
-	"sync"
 
-	pb "github.com/silvanob/atlas-boards/routeguide"
+	pb "github.com/silvanob/atlas-boards/api"
 	"google.golang.org/grpc"
 )
 
 var (
-	port = flag.Int("port", 50051, "The server port")
+	port   = flag.Int("port", 50051, "The server port")
+	slices = []card{card{title: "Hello", content: "Hello"}}
 )
 
 func main() {
@@ -28,13 +28,13 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	channel := make(chan card)
-	slices := []card{card{title: "Hello", content: "Hello"}}
+	//	slices := []card{card{title: "Hello", content: "Hello"}}
 	fmt.Println("This will be a board for managing tasks")
 	fmt.Println(slices[0])
 
 	grpcServer := grpc.NewServer()
 	server := newServer(&channel)
-	pb.RegisterRouteGuideServer(grpcServer, server)
+	pb.RegisterAtlasBoardsServer(grpcServer, server)
 	go grpcServer.Serve(lis)
 	go func() {
 		for x := range channel {
@@ -75,20 +75,29 @@ type card struct {
 	content string
 }
 
-type routeGuideServer struct {
-	pb.UnimplementedRouteGuideServer
-	savedFeatures []*pb.Feature // read-only after initialized
-	channel       chan card
-	mu            sync.Mutex // protects routeNotes
-	routeNotes    map[string][]*pb.RouteNote
+type atlasBoardsServer struct {
+	pb.UnimplementedAtlasBoardsServer
+	channel chan card
 }
 
-func (s *routeGuideServer) CreateTicket(ctx context.Context, ticket *pb.Ticket) (*pb.Ticket, error) {
+func (s *atlasBoardsServer) CreateTicket(ctx context.Context, ticket *pb.Ticket) (*pb.Ticket, error) {
 	s.channel <- card{title: ticket.Title, content: ticket.Content}
 
 	return ticket, nil
 }
-func newServer(channel *chan card) *routeGuideServer {
-	s := &routeGuideServer{channel: *channel, routeNotes: make(map[string][]*pb.RouteNote)}
+
+func (s *atlasBoardsServer) ListTickets(listTicket *pb.TicketRequest, listTicketsServer pb.AtlasBoards_ListTicketsServer) error {
+	for _, carditem := range slices {
+		if err := listTicketsServer.Send(&pb.Ticket{Title: carditem.title, Content: carditem.content}); err != nil {
+			return err
+		}
+
+		fmt.Println(carditem)
+	}
+
+	return nil
+}
+func newServer(channel *chan card) *atlasBoardsServer {
+	s := &atlasBoardsServer{channel: *channel}
 	return s
 }

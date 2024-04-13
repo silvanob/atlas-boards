@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "github.com/silvanob/atlas-boards/api/atlasboards";
+option java_package = "me.biemans.atlasboards.api";
+option java_multiple_files = true;
+
+package atlasboards;
+service AtlasBoards {
+  rpc CreateTicket(Ticket) returns (Ticket) {}
+  rpc ListTickets(TicketRequest) returns (stream Ticket) {}
+}
+message Ticket {
+  string title = 1;
+  string content = 2;
+}
+
+message TicketRequest {}
