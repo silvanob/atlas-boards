@@ -34,16 +34,28 @@ func main() {
 
 	go grpcServer.Serve(lis)
 	for {
-		stringSplit := strings.Split(StringPrompt("What do you want to add to the list?"), " ")
-		if stringSplit[0] == "add" {
-			cardStorage.AddCard("CUSTOM1", strings.Join(stringSplit[1:], " "))
-		} else if stringSplit[0] == "list" {
+		command, args := parseCommandArgs(StringPrompt("What do you want to add to the list?"))
+		switch command {
+		case "add":
+			cardStorage.AddCard("CUSTOM1", strings.Join(args, " "))
+		case "list":
 			fmt.Println(cardStorage.ListCards())
-		} else if stringSplit[0] == "remove" {
-			cardStorage.RemoveCardByTitle(stringSplit[1])
-		} else {
+		case "remove":
+			cardStorage.RemoveCardByTitle(args[1])
+		default:
 			fmt.Println("Bad command!")
 		}
+	}
+}
+
+func parseCommandArgs(commandString string) (string, []string) {
+	stringSplit := strings.Split(commandString, " ")
+	if len(stringSplit) == 1 {
+		return stringSplit[0], nil
+	} else if len(stringSplit) >= 2 {
+		return stringSplit[0], stringSplit[1:]
+	} else {
+		return "", nil
 	}
 }
 
