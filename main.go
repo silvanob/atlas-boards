@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"context"
 	"flag"
 	"log"
 	"net"
@@ -29,26 +28,23 @@ func main() {
 
 	fmt.Println("This will be a board for managing tasks")
 	grpcServer := grpc.NewServer()
-	server := newServer()
-	fmt.Println(server.cards[0])
+	cardStorage := NewCardStorage()
+	server := NewServer(cardStorage)
 	pb.RegisterAtlasBoardsServer(grpcServer, server)
 
-	grpcServer.Serve(lis)
+	go grpcServer.Serve(lis)
 	for {
 		stringSplit := strings.Split(StringPrompt("What do you want to add to the list?"), " ")
 		if stringSplit[0] == "add" {
-			addToSlice(&server.cards, card{title: "CUSTOM1", content: strings.Join(stringSplit[1:], " ")})
-			fmt.Println(server.cards)
+			cardStorage.AddCard("CUSTOM1", strings.Join(stringSplit[1:], " "))
 		} else if stringSplit[0] == "list" {
-			fmt.Println(server.cards)
+			fmt.Println(cardStorage.ListCards())
+		} else if stringSplit[0] == "remove" {
+			cardStorage.RemoveCardByTitle(stringSplit[1])
 		} else {
 			fmt.Println("Bad command!")
 		}
 	}
-}
-
-func addToSlice(slice *[]card, stringu card) {
-	*slice = append(*slice, stringu)
 }
 
 func StringPrompt(label string) string {
@@ -62,33 +58,4 @@ func StringPrompt(label string) string {
 		}
 	}
 	return strings.TrimSpace(s)
-}
-
-type card struct {
-	title   string
-	content string
-}
-
-type atlasBoardsServer struct {
-	pb.UnimplementedAtlasBoardsServer
-	cards []card
-}
-
-func (s *atlasBoardsServer) CreateTicket(ctx context.Context, ticket *pb.Ticket) (*pb.Ticket, error) {
-	s.cards = append(s.cards, card{title: ticket.Title, content: ticket.Content})
-	return ticket, nil
-}
-
-func (s *atlasBoardsServer) ListTickets(listTicket *pb.TicketRequest, listTicketsServer pb.AtlasBoards_ListTicketsServer) error {
-	for _, carditem := range s.cards {
-		if err := listTicketsServer.Send(&pb.Ticket{Title: carditem.title, Content: carditem.content}); err != nil {
-			return err
-		}
-		fmt.Println(carditem)
-	}
-	return nil
-}
-func newServer() *atlasBoardsServer {
-	s := &atlasBoardsServer{cards: []card{card{title: "Hello", content: "Hello"}}}
-	return s
 }
