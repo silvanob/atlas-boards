@@ -1,20 +1,30 @@
 'use client'
 import Image from "next/image";
-import axios from 'axios';
-import React, { useState } from 'react';
+import axios, { AxiosResponse } from 'axios';
+import React, { useState, useEffect } from 'react';
 import TextField from '@mui/material/TextField';
+import { Ticket } from './models/Ticket';
 export default function Home() {
 const [title, setTitle] = useState("");
-const [content, setContent] = useState("hello");
-const [allItems, setAllItems] = useState("");
-axios.get("http://localhost:8080/list").then((res) => {
-setAllItems(JSON.stringify(res.data));
+const [content, setContent] = useState("");
+const [allItems, setAllItems] = useState<Ticket[]>([]);
+useEffect(() => {
+
+axios.get("http://localhost:8080/list").then((res: AxiosResponse<Ticket[]>) => {
+setAllItems(res.data);
 });
+}, []);
+//axios.get("http://localhost:8080/list").then((res) => {
+//setAllItems(JSON.stringify(res.data));
+//});
 function onSubmit(e) {
-axios.post("http://localhost:8080", { title: title, content: content }).then((res) => {
-console.log("Success!" + res.data);
-});
 e.preventDefault();
+axios.post("http://localhost:8080", { title: title, content: content }).then((res: AxiosResponse<Ticket>) => {
+setAllItems(allItems.concat(res.data));
+console.log("Success!" + res.data);
+setTitle("");
+setContent("");
+});
 }
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
@@ -56,7 +66,9 @@ e.preventDefault();
 
       <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
       <form onSubmit={onSubmit}>
-      <TextField value={title} onChange={(e) => setTitle(e.target.value)}></TextField>
+      <TextField label="title" id="title" value={title} onChange={(e) => setTitle(e.target.value)}></TextField>
+      <TextField label="content" id="content" value={content} onChange={(e) => setContent(e.target.value)}></TextField>
+      <button type="submit">Submit</button>
 
       </form>
         <a
@@ -66,7 +78,7 @@ e.preventDefault();
           rel="noopener noreferrer"
         >
           <h2 className="mb-3 text-2xl font-semibold">
-          {allItems}
+          {allItems.map(item => <p>{item.title + " " + item.content}</p>)}
             <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
               -&gt;
             </span>

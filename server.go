@@ -7,18 +7,18 @@ import (
 	pb "github.com/silvanob/atlas-boards/api"
 )
 
-type atlasBoardsServer struct {
+type AtlasBoardsServer struct {
 	pb.UnimplementedAtlasBoardsServer
-	cardStorage *CardStorage
+	cardStorage StorageDriver
 }
 
-func (s *atlasBoardsServer) CreateTicket(ctx context.Context, ticket *pb.Ticket) (*pb.Ticket, error) {
-	s.cardStorage.AddCard(ticket.Title, ticket.Content)
+func (s *AtlasBoardsServer) CreateTicket(ctx context.Context, ticket *pb.Ticket) (*pb.Ticket, error) {
+	s.cardStorage.Add(card{title: ticket.Title, content: ticket.Content})
 	return ticket, nil
 }
 
-func (s *atlasBoardsServer) ListTickets(listTicket *pb.TicketRequest, listTicketsServer pb.AtlasBoards_ListTicketsServer) error {
-	for _, carditem := range s.cardStorage.ListCards() {
+func (s *AtlasBoardsServer) ListTickets(listTicket *pb.TicketRequest, listTicketsServer pb.AtlasBoards_ListTicketsServer) error {
+	for _, carditem := range s.cardStorage.List() {
 		if err := listTicketsServer.Send(&pb.Ticket{Title: carditem.title, Content: carditem.content}); err != nil {
 			return err
 		}
@@ -26,10 +26,10 @@ func (s *atlasBoardsServer) ListTickets(listTicket *pb.TicketRequest, listTicket
 	}
 	return nil
 }
-func NewServer(cardStorage *CardStorage) *atlasBoardsServer {
+func NewServer(cardStorage *CardStorageSlice) *AtlasBoardsServer {
 	if cardStorage == nil {
-		cardStorage = NewCardStorage()
+		cardStorage = NewCardStorageSlice()
 	}
-	s := &atlasBoardsServer{cardStorage: cardStorage}
+	s := &AtlasBoardsServer{cardStorage: cardStorage}
 	return s
 }

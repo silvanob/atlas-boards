@@ -28,7 +28,7 @@ func main() {
 
 	fmt.Println("This will be a board for managing tasks")
 	grpcServer := grpc.NewServer()
-	cardStorage := NewCardStorage()
+	cardStorage := NewCardStorageSlice()
 	server := NewServer(cardStorage)
 	pb.RegisterAtlasBoardsServer(grpcServer, server)
 
@@ -37,11 +37,11 @@ func main() {
 		command, args := parseCommandArgs(StringPrompt("What do you want to add to the list?"))
 		switch command {
 		case "add":
-			cardStorage.AddCard("CUSTOM1", strings.Join(args, " "))
+			cardStorage.Add(card{title: "CUSTOM1", content: strings.Join(args, " ")})
 		case "list":
-			fmt.Println(cardStorage.ListCards())
+			fmt.Println(cardStorage.List())
 		case "remove":
-			cardStorage.RemoveCardByTitle(args[1])
+			cardStorage.Remove(args[0])
 		default:
 			fmt.Println("Bad command!")
 		}
@@ -50,13 +50,12 @@ func main() {
 
 func parseCommandArgs(commandString string) (string, []string) {
 	stringSplit := strings.Split(commandString, " ")
-	if len(stringSplit) == 1 {
+	if stringLength := len(stringSplit); stringLength == 1 {
 		return stringSplit[0], nil
-	} else if len(stringSplit) >= 2 {
+	} else if stringLength >= 2 {
 		return stringSplit[0], stringSplit[1:]
-	} else {
-		return "", nil
 	}
+	return "", nil
 }
 
 func StringPrompt(label string) string {
