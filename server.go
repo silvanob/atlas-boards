@@ -26,7 +26,7 @@ func (s *AtlasBoardsServer) ListTickets(listTicket *pb.TicketRequest, listTicket
 	}
 	return nil
 }
-func NewServer(cardStorage *CardStorageSlice) *AtlasBoardsServer {
+func NewServer(cardStorage StorageDriver) *AtlasBoardsServer {
 	if cardStorage == nil {
 		cardStorage = NewCardStorageSlice()
 	}

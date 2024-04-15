@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"syscall"
 
 	"flag"
 	"log"
 	"net"
 
 	pb "github.com/silvanob/atlas-boards/api"
+	"golang.org/x/term"
 	"google.golang.org/grpc"
 )
 
@@ -19,6 +21,10 @@ var (
 )
 
 func main() {
+	if !term.IsTerminal(int(syscall.Stdin)) {
+		fmt.Println("Terminal is not interactive, exiting!")
+		return
+	}
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 
@@ -28,7 +34,7 @@ func main() {
 
 	fmt.Println("This will be a board for managing tasks")
 	grpcServer := grpc.NewServer()
-	cardStorage := NewCardStorageSlice()
+	cardStorage := NewCardStorageMap()
 	server := NewServer(cardStorage)
 	pb.RegisterAtlasBoardsServer(grpcServer, server)
 
